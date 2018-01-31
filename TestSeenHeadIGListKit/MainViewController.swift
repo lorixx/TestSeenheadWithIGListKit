@@ -16,7 +16,7 @@ class MainViewController: UIViewController, ListAdapterDataSource {
     }()
     let collectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
     
-    private var viewModels: [ ListDiffable ] = []
+    private var viewModels: [ListDiffable] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -47,14 +47,18 @@ class MainViewController: UIViewController, ListAdapterDataSource {
         let message3 = TestMessage.init("Any plan for the long weekend?", seenBy: [user2])
         let messages = [message1, message2, message3]
         
+        var currentSeenHeads: [TestUser] = []
+
         for _ in 0..<35 {
             let isSeenhead = (arc4random_uniform(2) == 1)
-            
             if isSeenhead {
                 let userIndex = Int(arc4random_uniform(3))
                 let user = users[userIndex]
-                self.viewModels.append(TestUser.init(user.name, color: user.color))
+                currentSeenHeads.append(TestUser.init(user.name, color: user.color))
             } else {
+                self.viewModels.append(SeenHeads.init(currentSeenHeads))
+                currentSeenHeads.removeAll()
+                
                 let messageIndex = Int(arc4random_uniform(3))
                 let message = messages[messageIndex]
                 self.viewModels.append(TestMessage.init(message.text, seenBy: []))
@@ -81,17 +85,8 @@ class MainViewController: UIViewController, ListAdapterDataSource {
             }
 
             return ListSingleSectionController.init(cellClass: TestLabelCell.self, configureBlock:configureBlock, sizeBlock: sizeBlock)
-        } else if object is TestUser {
-            let configureBlock = { (item: Any, cell: UICollectionViewCell) in
-                guard let cell = cell as? TestSeenHeadCell, let user = item as? TestUser else { return }
-                cell.color = user.color
-            }
-            
-            let sizeBlock = { (item: Any, context: ListCollectionContext?) -> CGSize in
-                return CGSize(width: 10, height: 10)
-            }
-            
-            return ListSingleSectionController.init(cellClass: TestSeenHeadCell.self, configureBlock:configureBlock, sizeBlock: sizeBlock)
+        } else if object is SeenHeads {
+            return HorizontalSectionController()
         } else {
             print("Incorrect data")
             return ListSectionController.init()
