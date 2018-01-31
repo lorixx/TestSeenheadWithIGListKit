@@ -32,4 +32,3 @@ class TestMessage: NSObject, ListDiffable {
         return text == object.text && seenBy.count == object.seenBy.count
     }
 }
-

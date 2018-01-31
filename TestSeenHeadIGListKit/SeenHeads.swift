@@ -17,6 +17,8 @@ final class SeenHeads: NSObject, ListDiffable {
         self.users = users
     }
     
+    // MARK: ListDiffable
+    
     func diffIdentifier() -> NSObjectProtocol {
         return self
     }

@@ -39,4 +39,3 @@ class TestLabelCell: UICollectionViewCell {
         textLabel.frame = CGRect(x: 10, y: (size.height - textLabel.font.lineHeight)/2, width: size.width - 20, height: textLabel.font.lineHeight)
     }
 }
-

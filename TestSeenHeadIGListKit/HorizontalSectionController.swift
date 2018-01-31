@@ -60,6 +60,4 @@ final class HorizontalSectionController: ListSectionController, ListAdapterDataS
     func emptyView(for listAdapter: ListAdapter) -> UIView? {
         return nil
     }
-    
 }
-

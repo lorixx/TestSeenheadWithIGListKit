@@ -34,7 +34,6 @@ class MainViewController: UIViewController, ListAdapterDataSource {
     }
     
     fileprivate func resetData() {
-        
         viewModels.removeAll()
         
         let user1 = TestUser.init("James", color: .black)
@@ -49,7 +48,7 @@ class MainViewController: UIViewController, ListAdapterDataSource {
         
         var currentSeenHeads: [TestUser] = []
 
-        for _ in 0..<35 {
+        for _ in 0..<15 {
             let isSeenhead = (arc4random_uniform(2) == 1)
             if isSeenhead {
                 let userIndex = Int(arc4random_uniform(3))
@@ -78,13 +77,13 @@ class MainViewController: UIViewController, ListAdapterDataSource {
                 guard let cell = cell as? TestLabelCell, let message = item as? TestMessage else { return }
                 cell.text = message.text
             }
-            
             let sizeBlock = { (item: Any, context: ListCollectionContext?) -> CGSize in
                 guard let context = context else { return CGSize() }
                 return CGSize(width: context.containerSize.width, height: 50)
             }
-
-            return ListSingleSectionController.init(cellClass: TestLabelCell.self, configureBlock:configureBlock, sizeBlock: sizeBlock)
+            let messageCellSectionController = ListSingleSectionController.init(cellClass: TestLabelCell.self, configureBlock:configureBlock, sizeBlock: sizeBlock)
+            messageCellSectionController.selectionDelegate = self
+            return messageCellSectionController
         } else if object is SeenHeads {
             return HorizontalSectionController()
         } else {
@@ -98,3 +97,10 @@ class MainViewController: UIViewController, ListAdapterDataSource {
     }
 }
 
+extension MainViewController: ListSingleSectionControllerDelegate {
+    func didSelect(_ sectionController: ListSingleSectionController, with object: Any) {
+        // NB: After user taps on a normal message cell, we reset and regenerate a new set of data
+        self.resetData()
+        adapter.performUpdates(animated: true, completion: nil)
+    }
+}
