@@ -9,12 +9,8 @@
 
 #import <UIKit/UIKit.h>
 
-#import <IGListKit/IGListAdapter.h>
-#import <IGListKit/IGListCollectionViewDelegateLayout.h>
+@interface UIScrollView (IGListKit)
 
-@interface IGListAdapter (UICollectionView)
-<
-UICollectionViewDataSource,
-IGListCollectionViewDelegateLayout
->
+- (UIEdgeInsets) ig_contentInset;
+
 @end

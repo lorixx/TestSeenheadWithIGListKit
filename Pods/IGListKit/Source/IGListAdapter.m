@@ -15,9 +15,14 @@
 
 #import "IGListSectionControllerInternal.h"
 #import "IGListDebugger.h"
+#import "IGListArrayUtilsInternal.h"
+#import "UIScrollView+IGListKit.h"
 
 @implementation IGListAdapter {
     NSMapTable<UICollectionReusableView *, IGListSectionController *> *_viewSectionControllerMap;
+    // An array of blocks to execute once batch updates are finished
+    NSMutableArray<void (^)(void)> *_queuedCompletionBlocks;
+    NSHashTable<id<IGListAdapterUpdateListener>> *_updateListeners;
 }
 
 - (void)dealloc {
@@ -48,6 +53,7 @@
 
         _displayHandler = [IGListDisplayHandler new];
         _workingRangeHandler = [[IGListWorkingRangeHandler alloc] initWithWorkingRangeSize:workingRangeSize];
+        _updateListeners = [NSHashTable weakObjectsHashTable];
 
         _viewSectionControllerMap = [NSMapTable mapTableWithKeyOptions:NSMapTableObjectPointerPersonality | NSMapTableStrongMemory
                                                           valueOptions:NSMapTableStrongMemory];
@@ -97,7 +103,7 @@
         _collectionView = collectionView;
         _collectionView.dataSource = self;
 
-        if ([_collectionView respondsToSelector:@selector(setPrefetchingEnabled:)]) {
+        if (@available(iOS 10.0, tvOS 10, *)) {
             _collectionView.prefetchingEnabled = NO;
         }
 
@@ -139,7 +145,8 @@
 - (void)updateAfterPublicSettingsChange {
     id<IGListAdapterDataSource> dataSource = _dataSource;
     if (_collectionView != nil && dataSource != nil) {
-        [self updateObjects:[[dataSource objectsForListAdapter:self] copy] dataSource:dataSource];
+        NSArray *uniqueObjects = objectsWithDuplicateIdentifiersRemoved([dataSource objectsForListAdapter:self]);
+        [self updateObjects:uniqueObjects dataSource:dataSource];
     }
 }
 
@@ -243,7 +250,7 @@
     const CGFloat offsetMid = (offsetMin + offsetMax) / 2.0;
     const CGFloat collectionViewWidth = collectionView.bounds.size.width;
     const CGFloat collectionViewHeight = collectionView.bounds.size.height;
-    const UIEdgeInsets contentInset = collectionView.contentInset;
+    const UIEdgeInsets contentInset = collectionView.ig_contentInset;
     CGPoint contentOffset = collectionView.contentOffset;
     switch (scrollDirection) {
         case UICollectionViewScrollDirectionHorizontal: {
@@ -264,8 +271,8 @@
                     contentOffset.x = offsetMin - contentInset.left;
                     break;
             }
-            const CGFloat maxOffsetX = collectionView.contentSize.width - collectionView.frame.size.width + collectionView.contentInset.right;
-            const CGFloat minOffsetX = -collectionView.contentInset.left;
+            const CGFloat maxOffsetX = collectionView.contentSize.width - collectionView.frame.size.width + contentInset.right;
+            const CGFloat minOffsetX = -contentInset.left;
             contentOffset.x = MIN(contentOffset.x, maxOffsetX);
             contentOffset.x = MAX(contentOffset.x, minOffsetX);
             break;
@@ -273,7 +280,7 @@
         case UICollectionViewScrollDirectionVertical: {
             switch (scrollPosition) {
                 case UICollectionViewScrollPositionBottom:
-                    contentOffset.y = offsetMax - collectionViewHeight - contentInset.top;
+                    contentOffset.y = offsetMax - collectionViewHeight;
                     break;
                 case UICollectionViewScrollPositionCenteredVertically: {
                     const CGFloat insets = (contentInset.top - contentInset.bottom) / 2.0;
@@ -288,8 +295,8 @@
                     contentOffset.y = offsetMin - contentInset.top;
                     break;
             }
-            const CGFloat maxOffsetY = collectionView.contentSize.height - collectionView.frame.size.height + collectionView.contentInset.bottom;
-            const CGFloat minOffsetY = -collectionView.contentInset.top;
+            const CGFloat maxOffsetY = collectionView.contentSize.height - collectionView.frame.size.height + contentInset.bottom;
+            const CGFloat minOffsetY = -contentInset.top;
             contentOffset.y = MIN(contentOffset.y, maxOffsetY);
             contentOffset.y = MAX(contentOffset.y, minOffsetY);
             break;
@@ -317,6 +324,8 @@
     NSArray *fromObjects = self.sectionMap.objects;
     NSArray *newObjects = [dataSource objectsForListAdapter:self];
 
+    [self enterBatchUpdates];
+
     __weak __typeof__(self) weakSelf = self;
     [self.updater performUpdateWithCollectionView:collectionView
                                       fromObjects:fromObjects
@@ -332,9 +341,11 @@
                                 // release the previous items
                                 weakSelf.previousSectionMap = nil;
 
+                                [weakSelf notifyDidUpdate:IGListAdapterUpdateTypePerformUpdates animated:animated];
                                 if (completion) {
                                     completion(finished);
                                 }
+                                [weakSelf exitBatchUpdates];
                             }];
 }
 
@@ -351,14 +362,19 @@
         return;
     }
 
-    NSArray *newItems = [[dataSource objectsForListAdapter:self] copy];
+    NSArray *uniqueObjects = objectsWithDuplicateIdentifiersRemoved([dataSource objectsForListAdapter:self]);
 
     __weak __typeof__(self) weakSelf = self;
     [self.updater reloadDataWithCollectionView:collectionView reloadUpdateBlock:^{
         // purge all section controllers from the item map so that they are regenerated
         [weakSelf.sectionMap reset];
-        [weakSelf updateObjects:newItems dataSource:dataSource];
-    } completion:completion];
+        [weakSelf updateObjects:uniqueObjects dataSource:dataSource];
+    } completion:^(BOOL finished) {
+        [weakSelf notifyDidUpdate:IGListAdapterUpdateTypeReloadData animated:NO];
+        if (completion) {
+            completion(finished);
+        }
+    }];
 }
 
 - (void)reloadObjects:(NSArray *)objects {
@@ -390,6 +406,26 @@
     IGAssert(collectionView != nil, @"Tried to reload the adapter without a collection view");
 
     [self.updater reloadCollectionView:collectionView sections:sections];
+}
+
+- (void)addUpdateListener:(id<IGListAdapterUpdateListener>)updateListener {
+    IGAssertMainThread();
+    IGParameterAssert(updateListener != nil);
+
+    [_updateListeners addObject:updateListener];
+}
+
+- (void)removeUpdateListener:(id<IGListAdapterUpdateListener>)updateListener {
+    IGAssertMainThread();
+    IGParameterAssert(updateListener != nil);
+
+    [_updateListeners removeObject:updateListener];
+}
+
+- (void)notifyDidUpdate:(IGListAdapterUpdateType)update animated:(BOOL)animated {
+    for (id<IGListAdapterUpdateListener> listener in _updateListeners) {
+        [listener listAdapter:self didFinishUpdate:update animated:animated];
+    }
 }
 
 
@@ -449,6 +485,14 @@
 
 - (NSArray<IGListSectionController *> *)visibleSectionControllers {
     IGAssertMainThread();
+    if (IGListExperimentEnabled(self.experiments, IGListExperimentFasterVisibleSectionController)) {
+        return [self visibleSectionControllersFromDisplayHandler];
+    } else {
+        return [self visibleSectionControllersFromLayoutAttributes];
+    }
+}
+
+- (NSArray<IGListSectionController *> *)visibleSectionControllersFromLayoutAttributes {
     NSMutableSet *visibleSectionControllers = [NSMutableSet new];
     NSArray<UICollectionViewLayoutAttributes *> *attributes =
     [self.collectionView.collectionViewLayout layoutAttributesForElementsInRect:self.collectionView.bounds];
@@ -460,6 +504,10 @@
         }
     }
     return [visibleSectionControllers allObjects];
+}
+
+- (NSArray<IGListSectionController *> *)visibleSectionControllersFromDisplayHandler {
+    return [[self.displayHandler visibleListSections] allObjects];
 }
 
 - (NSArray *)visibleObjects {
@@ -530,11 +578,8 @@
     IGParameterAssert(dataSource != nil);
 
 #if DEBUG
-    NSCountedSet *identifiersSet = [NSCountedSet new];
     for (id object in objects) {
-        [identifiersSet addObject:[object diffIdentifier]];
         IGAssert([object isEqualToDiffableObject:object], @"Object instance %@ not equal to itself. This will break infra map tables.", object);
-        IGAssert([identifiersSet countForObject:[object diffIdentifier]] <= 1, @"Diff identifier %@ for object %@ occurs more than once. Identifiers must be unique!", [object diffIdentifier], object);
     }
 #endif
 
@@ -576,13 +621,13 @@
         }
 
         [sectionControllers addObject:sectionController];
-
-#if DEBUG
-        IGAssert([NSSet setWithArray:sectionControllers].count == sectionControllers.count,
-                 @"Section controllers array is not filled with unique objects; section controllers are being reused");
-#endif
         [validObjects addObject:object];
     }
+    
+#if DEBUG
+    IGAssert([NSSet setWithArray:sectionControllers].count == sectionControllers.count,
+             @"Section controllers array is not filled with unique objects; section controllers are being reused");
+#endif
 
     // clear the view controller and collection context
     IGListSectionControllerPopThread();
@@ -702,6 +747,27 @@
     [_viewSectionControllerMap removeObjectForKey:view];
 }
 
+- (void)deferBlockBetweenBatchUpdates:(void (^)(void))block {
+    IGAssertMainThread();
+    if (_queuedCompletionBlocks == nil) {
+        block();
+    } else {
+        [_queuedCompletionBlocks addObject:block];
+    }
+}
+
+- (void)enterBatchUpdates {
+    _queuedCompletionBlocks = [NSMutableArray new];
+}
+
+- (void)exitBatchUpdates {
+    NSArray *blocks = [_queuedCompletionBlocks copy];
+    _queuedCompletionBlocks = nil;
+    for (void (^block)(void) in blocks) {
+        block();
+    }
+}
+
 #pragma mark - UIScrollViewDelegate
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
@@ -765,9 +831,13 @@
     return self.collectionView.contentInset;
 }
 
+- (UIEdgeInsets)adjustedContainerInset {
+    return self.collectionView.ig_contentInset;
+}
+
 - (CGSize)insetContainerSize {
     UICollectionView *collectionView = self.collectionView;
-    return UIEdgeInsetsInsetRect(collectionView.bounds, collectionView.contentInset).size;
+    return UIEdgeInsetsInsetRect(collectionView.bounds, collectionView.ig_contentInset).size;
 }
 
 - (CGSize)containerSizeForSectionController:(IGListSectionController *)sectionController {
@@ -964,6 +1034,8 @@
     IGParameterAssert(updates != nil);
     UICollectionView *collectionView = self.collectionView;
     IGAssert(collectionView != nil, @"Performing batch updates without a collection view.");
+
+    [self enterBatchUpdates];
     
     __weak __typeof__(self) weakSelf = self;
     [self.updater performUpdateWithCollectionView:collectionView animated:animated itemUpdates:^{
@@ -973,9 +1045,11 @@
         weakSelf.isInUpdateBlock = NO;
     } completion: ^(BOOL finished) {
         [weakSelf updateBackgroundViewShouldHide:![weakSelf itemCountIsZero]];
+        [weakSelf notifyDidUpdate:IGListAdapterUpdateTypeItemUpdates animated:animated];
         if (completion) {
             completion(finished);
         }
+        [weakSelf exitBatchUpdates];
     }];
 }
 
@@ -1004,11 +1078,14 @@
     UICollectionViewLayoutInvalidationContext *context = [[[layout.class invalidationContextClass] alloc] init];
     [context invalidateItemsAtIndexPaths:indexPaths];
     
-    void (^block)() = ^{
-        [layout invalidateLayoutWithContext:context];
-    };
-    
-    [_collectionView performBatchUpdates:block completion:completion];
+    __weak __typeof__(_collectionView) weakCollectionView = _collectionView;
+
+    // do not call -[UICollectionView performBatchUpdates:completion:] while already updating. defer it until completed.
+    [self deferBlockBetweenBatchUpdates:^{
+        [weakCollectionView performBatchUpdates:^{
+            [layout invalidateLayoutWithContext:context];
+        } completion:completion];
+    }];
 }
 
 #pragma mark - IGListBatchContext

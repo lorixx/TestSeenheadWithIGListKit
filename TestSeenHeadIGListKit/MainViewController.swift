@@ -14,7 +14,11 @@ class MainViewController: UIViewController, ListAdapterDataSource {
     lazy var adapter: ListAdapter = {
         return ListAdapter(updater: ListAdapterUpdater(), viewController: self)
     }()
-    let collectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
+    lazy var collectionView : UICollectionView = {
+        let layout = TestMessageCollectionViewLayout.init()
+        layout.dataSource = self
+        return UICollectionView.init(frame: .zero, collectionViewLayout:layout)
+    }()
     
     private var viewModels: [ListDiffable] = []
     
@@ -46,18 +50,13 @@ class MainViewController: UIViewController, ListAdapterDataSource {
         let message3 = TestMessage.init("Any plan for the long weekend?", seenBy: [user2])
         let messages = [message1, message2, message3]
         
-        var currentSeenHeads: [TestUser] = []
-
         for _ in 0..<15 {
             let isSeenhead = (arc4random_uniform(2) == 1)
             if isSeenhead {
                 let userIndex = Int(arc4random_uniform(3))
                 let user = users[userIndex]
-                currentSeenHeads.append(TestUser.init(user.name, color: user.color))
+                self.viewModels.append(TestUser.init(user.name, color: user.color))
             } else {
-                self.viewModels.append(SeenHeads.init(currentSeenHeads))
-                currentSeenHeads.removeAll()
-                
                 let messageIndex = Int(arc4random_uniform(3))
                 let message = messages[messageIndex]
                 self.viewModels.append(TestMessage.init(message.text, seenBy: []))
@@ -72,24 +71,7 @@ class MainViewController: UIViewController, ListAdapterDataSource {
     }
     
     func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        if object is TestMessage {
-            let configureBlock = { (item: Any, cell: UICollectionViewCell) in
-                guard let cell = cell as? TestLabelCell, let message = item as? TestMessage else { return }
-                cell.text = message.text
-            }
-            let sizeBlock = { (item: Any, context: ListCollectionContext?) -> CGSize in
-                guard let context = context else { return CGSize() }
-                return CGSize(width: context.containerSize.width, height: 50)
-            }
-            let messageCellSectionController = ListSingleSectionController.init(cellClass: TestLabelCell.self, configureBlock:configureBlock, sizeBlock: sizeBlock)
-            messageCellSectionController.selectionDelegate = self
-            return messageCellSectionController
-        } else if object is SeenHeads {
-            return HorizontalSectionController()
-        } else {
-            print("Incorrect data")
-            return ListSectionController.init()
-        }
+        return SingleSectionController.init()
     }
     
     func emptyView(for listAdapter: ListAdapter) -> UIView? {
@@ -102,5 +84,16 @@ extension MainViewController: ListSingleSectionControllerDelegate {
         // NB: After user taps on a normal message cell, we reset and regenerate a new set of data
         self.resetData()
         adapter.performUpdates(animated: true, completion: nil)
+    }
+}
+
+extension MainViewController: TestMessageCollectionViewLayoutDataSource {
+    func collectionView(_ collectionView: UICollectionView, testMessageCollectionViewLayout collectionViewLayout: TestMessageCollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        return adapter.sizeForItem(at: indexPath)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, testMessageCollectionViewLayout collectionViewLayout: TestMessageCollectionViewLayout, isSeenHeadAt indexPath: IndexPath) -> Bool {
+        let object = viewModels[indexPath.section]
+        return (object is TestUser)
     }
 }

@@ -166,6 +166,18 @@ static void * kStackedSectionControllerIndexKey = &kStackedSectionControllerInde
     [sectionController didDeselectItemAtIndex:localIndex];
 }
 
+- (void)didHighlightItemAtIndex:(NSInteger)index {
+    IGListSectionController *sectionController = [self sectionControllerForObjectIndex:index];
+    const NSInteger localIndex = [self localIndexForSectionController:sectionController index:index];
+    [sectionController didHighlightItemAtIndex:localIndex];
+}
+
+- (void)didUnhighlightItemAtIndex:(NSInteger)index {
+    IGListSectionController *sectionController = [self sectionControllerForObjectIndex:index];
+    const NSInteger localIndex = [self localIndexForSectionController:sectionController index:index];
+    [sectionController didUnhighlightItemAtIndex:localIndex];
+}
+
 #pragma mark - IGListCollectionContext
 
 - (CGSize)containerSize {
@@ -174,6 +186,10 @@ static void * kStackedSectionControllerIndexKey = &kStackedSectionControllerInde
 
 - (UIEdgeInsets)containerInset {
     return [self.collectionContext containerInset];
+}
+
+- (UIEdgeInsets)adjustedContainerInset {
+    return [self.collectionContext adjustedContainerInset];
 }
 
 - (CGSize)insetContainerSize {
