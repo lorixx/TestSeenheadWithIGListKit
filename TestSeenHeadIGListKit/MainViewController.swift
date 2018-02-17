@@ -14,6 +14,7 @@ class MainViewController: UIViewController, ListAdapterDataSource {
     lazy var adapter: ListAdapter = {
         return ListAdapter(updater: ListAdapterUpdater(), viewController: self)
     }()
+    
     lazy var collectionView : UICollectionView = {
         let layout = TestMessageCollectionViewLayout.init()
         layout.dataSource = self
@@ -39,29 +40,7 @@ class MainViewController: UIViewController, ListAdapterDataSource {
     
     fileprivate func resetData() {
         viewModels.removeAll()
-        
-        let user1 = TestUser.init("James", color: .black)
-        let user2 = TestUser.init("Jason", color: .blue)
-        let user3 = TestUser.init("Haley", color: .yellow)
-        let users = [user1, user2, user3]
-        
-        let message1 = TestMessage.init("Hello, how's it going!", seenBy: [user1])
-        let message2 = TestMessage.init("I am fine! Thank you", seenBy: [])
-        let message3 = TestMessage.init("Any plan for the long weekend?", seenBy: [user2])
-        let messages = [message1, message2, message3]
-        
-        for _ in 0..<15 {
-            let isSeenhead = (arc4random_uniform(2) == 1)
-            if isSeenhead {
-                let userIndex = Int(arc4random_uniform(3))
-                let user = users[userIndex]
-                self.viewModels.append(TestUser.init(user.name, color: user.color))
-            } else {
-                let messageIndex = Int(arc4random_uniform(3))
-                let message = messages[messageIndex]
-                self.viewModels.append(TestMessage.init(message.text, seenBy: []))
-            }
-        }
+        viewModels = TestSeenHeadUIMetrics.GenerateViewModels()
     }
 
     // MARK: ListAdapterDataSource

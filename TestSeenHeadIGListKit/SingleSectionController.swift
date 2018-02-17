@@ -22,9 +22,9 @@ final class SingleSectionController: ListSectionController {
     override func sizeForItem(at index: Int) -> CGSize {
         if object! is TestMessage {
             guard let context = collectionContext else { return CGSize() }
-            return CGSize(width: context.containerSize.width, height: 50)
+            return CGSize(width: context.containerSize.width, height: CGFloat(TestSeenHeadUIMetrics.MessageHeight))
         } else if object! is TestUser {
-            return CGSize(width: 10, height: 10)
+            return CGSize(width: CGFloat(TestSeenHeadUIMetrics.SeenHeadWidth), height: CGFloat(TestSeenHeadUIMetrics.SeenHeadWidth))
         } else {
             return CGSize.zero
         }
@@ -47,10 +47,10 @@ final class SingleSectionController: ListSectionController {
                                                                         fatalError()
             }
             let user = object as! TestUser
-            cell.color = user.color
+            cell.imageURL = user.url
             return cell
         } else {
-            fatalError()
+            assertionFailure()
             return UICollectionViewCell.init(frame: .zero)
         }
     }

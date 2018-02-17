@@ -13,12 +13,14 @@ class TestUser: NSObject, ListDiffable {
     
     var name: String = ""
     var color: UIColor = UIColor.black
+    var url: URL?
     let uuid = UUID.init()
     
-    init(_ name: String, color: UIColor) {
+    init(_ name: String, color: UIColor, url: URL? = nil) {
         super.init()
         self.name = name
         self.color = color
+        self.url = url
     }
     
     // MARK: ListDiffable

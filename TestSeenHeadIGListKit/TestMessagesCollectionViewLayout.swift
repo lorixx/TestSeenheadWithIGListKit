@@ -13,7 +13,6 @@ protocol TestMessageCollectionViewLayoutDataSource  {
     func collectionView(_ collectionView: UICollectionView, testMessageCollectionViewLayout collectionViewLayout:TestMessageCollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize
     
     func collectionView(_ collectionView: UICollectionView, testMessageCollectionViewLayout collectionViewLayout:TestMessageCollectionViewLayout, isSeenHeadAt indexPath: IndexPath) -> Bool
-    
 }
 
 class TestMessageCollectionViewLayout: UICollectionViewLayout {
@@ -43,12 +42,10 @@ class TestMessageCollectionViewLayout: UICollectionViewLayout {
         }
         
         let numberOfItems: Int = collectionViewDataSource.numberOfSections!(in: self.collectionView!)
-        
         var maxHeight: CGFloat = 0.0
         var isPrevSeenHead = false
         
         for index in 0..<numberOfItems {
-            
             let newIndexPath = IndexPath.init(item: 0, section: index)
             
             let size = layoutDataSource.collectionView(self.collectionView!, testMessageCollectionViewLayout: self, sizeForItemAt: newIndexPath)
