@@ -8,6 +8,8 @@ target 'TestSeenHeadIGListKit' do
   # Pods for TestSeenHeadIGListKit
   pod 'IGListKit', '~> 3.0'
 
+  pod 'AlamofireImage', '~> 3.3'
+
   target 'TestSeenHeadIGListKitTests' do
     inherit! :search_paths
     # Pods for testing

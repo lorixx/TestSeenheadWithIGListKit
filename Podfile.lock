@@ -1,4 +1,7 @@
 PODS:
+  - Alamofire (4.6.0)
+  - AlamofireImage (3.3.0):
+    - Alamofire (~> 4.5)
   - IGListKit (3.2.0):
     - IGListKit/Default (= 3.2.0)
   - IGListKit/Default (3.2.0):
@@ -6,11 +9,14 @@ PODS:
   - IGListKit/Diffing (3.2.0)
 
 DEPENDENCIES:
+  - AlamofireImage (~> 3.3)
   - IGListKit (~> 3.0)
 
 SPEC CHECKSUMS:
+  Alamofire: f41a599bd63041760b26d393ec1069d9d7b917f4
+  AlamofireImage: 2e784dc5d00f04903a52c1d169181469c805c3df
   IGListKit: ffe6f98a728ab0250aceea22e7957aa5477c5048
 
-PODFILE CHECKSUM: 44161525d894698ff103a30f6d91482ed2d2cd6c
+PODFILE CHECKSUM: 9b629c0cc675f0c04ef44780065cf055934b20c3
 
 COCOAPODS: 1.4.0
