@@ -9,9 +9,15 @@
 import Foundation
 import IGListKit
 
+protocol SingleSectionControllerDelegate {
+    func didTapSection(singleSectionController: SingleSectionController) -> Void
+}
+
 final class SingleSectionController: ListSectionController {
     
     private var object: Any?
+    
+    var delegate: SingleSectionControllerDelegate?
     
     override func sizeForItem(at index: Int) -> CGSize {
         if object! is TestMessage {
@@ -51,5 +57,9 @@ final class SingleSectionController: ListSectionController {
     
     override func didUpdate(to object: Any) {
         self.object = object
+    }
+    
+    override func didSelectItem(at index: Int) {
+        delegate?.didTapSection(singleSectionController: self)
     }
 }

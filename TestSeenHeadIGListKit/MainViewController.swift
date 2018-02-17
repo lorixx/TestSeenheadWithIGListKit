@@ -71,7 +71,9 @@ class MainViewController: UIViewController, ListAdapterDataSource {
     }
     
     func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        return SingleSectionController.init()
+        let sectionController = SingleSectionController.init()
+        sectionController.delegate = self
+        return sectionController
     }
     
     func emptyView(for listAdapter: ListAdapter) -> UIView? {
@@ -95,5 +97,13 @@ extension MainViewController: TestMessageCollectionViewLayoutDataSource {
     func collectionView(_ collectionView: UICollectionView, testMessageCollectionViewLayout collectionViewLayout: TestMessageCollectionViewLayout, isSeenHeadAt indexPath: IndexPath) -> Bool {
         let object = viewModels[indexPath.section]
         return (object is TestUser)
+    }
+}
+
+extension MainViewController: SingleSectionControllerDelegate {
+    func didTapSection(singleSectionController: SingleSectionController) {
+        let obj = viewModels.remove(at: singleSectionController.section)
+        viewModels.append(obj)
+        adapter.performUpdates(animated: true, completion: nil)
     }
 }
