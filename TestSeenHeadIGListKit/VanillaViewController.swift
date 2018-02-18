@@ -1,6 +1,5 @@
 //
 //  TestSeenheadViewController.swift
-//  Romantidea
 //
 //  Created by Zhisheng Huang on 1/27/18.
 //  Copyright © 2018 Zhisheng Huang. All rights reserved.
