@@ -19,6 +19,10 @@
 		B8432038202191BF00B75738 /* TestMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8432037202191BF00B75738 /* TestMessage.swift */; };
 		B843203C2021975F00B75738 /* TestLabelCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B843203B2021975F00B75738 /* TestLabelCell.swift */; };
 		B843203E2021977600B75738 /* TestSeenHeadCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B843203D2021977600B75738 /* TestSeenHeadCell.swift */; };
+		B87424942056545500F65A04 /* TestSeenHeadReusableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B87424932056545500F65A04 /* TestSeenHeadReusableView.swift */; };
+		B8742496205657E800F65A04 /* TestMessagesNewCollectionViewLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8742495205657E800F65A04 /* TestMessagesNewCollectionViewLayout.swift */; };
+		B8742498205667BE00F65A04 /* TestMessageSectionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8742497205667BE00F65A04 /* TestMessageSectionController.swift */; };
+		B874249A20566E1A00F65A04 /* TestNewMainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B874249920566E1A00F65A04 /* TestNewMainViewController.swift */; };
 		B87E6033203436850091E91C /* TestMessagesCollectionViewLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B87E6032203436850091E91C /* TestMessagesCollectionViewLayout.swift */; };
 		B8C5C1632038BA400024FE54 /* SingleSectionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C5C1622038BA400024FE54 /* SingleSectionController.swift */; };
 		B8C5C1652038D7E90024FE54 /* TestSeenHeadUIMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C5C1642038D7E90024FE54 /* TestSeenHeadUIMetrics.swift */; };
@@ -54,6 +58,10 @@
 		B8432037202191BF00B75738 /* TestMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestMessage.swift; sourceTree = "<group>"; };
 		B843203B2021975F00B75738 /* TestLabelCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestLabelCell.swift; sourceTree = "<group>"; };
 		B843203D2021977600B75738 /* TestSeenHeadCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestSeenHeadCell.swift; sourceTree = "<group>"; };
+		B87424932056545500F65A04 /* TestSeenHeadReusableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestSeenHeadReusableView.swift; sourceTree = "<group>"; };
+		B8742495205657E800F65A04 /* TestMessagesNewCollectionViewLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestMessagesNewCollectionViewLayout.swift; sourceTree = "<group>"; };
+		B8742497205667BE00F65A04 /* TestMessageSectionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestMessageSectionController.swift; sourceTree = "<group>"; };
+		B874249920566E1A00F65A04 /* TestNewMainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestNewMainViewController.swift; sourceTree = "<group>"; };
 		B87E6032203436850091E91C /* TestMessagesCollectionViewLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestMessagesCollectionViewLayout.swift; sourceTree = "<group>"; };
 		B8C5C1622038BA400024FE54 /* SingleSectionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleSectionController.swift; sourceTree = "<group>"; };
 		B8C5C1642038D7E90024FE54 /* TestSeenHeadUIMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestSeenHeadUIMetrics.swift; sourceTree = "<group>"; };
@@ -114,6 +122,7 @@
 		B8432012202183B200B75738 /* TestSeenHeadIGListKit */ = {
 			isa = PBXGroup;
 			children = (
+				B87424922056537700F65A04 /* SupplementaryViewSeenheads */,
 				B8432013202183B200B75738 /* AppDelegate.swift */,
 				B8432015202183B200B75738 /* MainViewController.swift */,
 				B8C5C1622038BA400024FE54 /* SingleSectionController.swift */,
@@ -139,6 +148,17 @@
 				B843202A202183B300B75738 /* Info.plist */,
 			);
 			path = TestSeenHeadIGListKitTests;
+			sourceTree = "<group>";
+		};
+		B87424922056537700F65A04 /* SupplementaryViewSeenheads */ = {
+			isa = PBXGroup;
+			children = (
+				B87424932056545500F65A04 /* TestSeenHeadReusableView.swift */,
+				B8742495205657E800F65A04 /* TestMessagesNewCollectionViewLayout.swift */,
+				B8742497205667BE00F65A04 /* TestMessageSectionController.swift */,
+				B874249920566E1A00F65A04 /* TestNewMainViewController.swift */,
+			);
+			path = SupplementaryViewSeenheads;
 			sourceTree = "<group>";
 		};
 		D8BD5557D9592C3B1A0C5303 /* Pods */ = {
@@ -371,10 +391,14 @@
 				B8432016202183B200B75738 /* MainViewController.swift in Sources */,
 				B87E6033203436850091E91C /* TestMessagesCollectionViewLayout.swift in Sources */,
 				B8432038202191BF00B75738 /* TestMessage.swift in Sources */,
+				B874249A20566E1A00F65A04 /* TestNewMainViewController.swift in Sources */,
 				B8C5C167203900410024FE54 /* VanillaViewController.swift in Sources */,
 				B8C5C1652038D7E90024FE54 /* TestSeenHeadUIMetrics.swift in Sources */,
 				B8C5C1632038BA400024FE54 /* SingleSectionController.swift in Sources */,
+				B8742496205657E800F65A04 /* TestMessagesNewCollectionViewLayout.swift in Sources */,
 				B843203E2021977600B75738 /* TestSeenHeadCell.swift in Sources */,
+				B8742498205667BE00F65A04 /* TestMessageSectionController.swift in Sources */,
+				B87424942056545500F65A04 /* TestSeenHeadReusableView.swift in Sources */,
 				B843203C2021975F00B75738 /* TestLabelCell.swift in Sources */,
 				B8432014202183B200B75738 /* AppDelegate.swift in Sources */,
 			);
