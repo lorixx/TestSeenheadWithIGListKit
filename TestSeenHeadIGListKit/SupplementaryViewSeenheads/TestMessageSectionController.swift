@@ -11,6 +11,8 @@ import IGListKit
 
 protocol TestMessageSectionControllerDelegate {
     func didTapSection(messageSectionController: TestMessageSectionController) -> Void
+    
+    func sectionController(_ sectionController: TestMessageSectionController, didTapSeenHead user: TestUser) -> Void
 }
 
 final class TestMessageSectionController: ListSectionController {
@@ -65,18 +67,10 @@ extension TestMessageSectionController: ListSupplementaryViewSource {
     
     func viewForSupplementaryElement(ofKind elementKind: String, at index: Int) -> UICollectionReusableView {
         let seenHeadSupplementaryView = (self.collectionContext?.dequeueReusableSupplementaryView(ofKind: elementKind, for: self, class: TestSeenHeadReusableView.self, at: index))! as! TestSeenHeadReusableView
+        seenHeadSupplementaryView.elementKind = elementKind
+        seenHeadSupplementaryView.delegate = self
         
-        var foundIndex = NSNotFound
-        for index in 0..<10 {
-            if (TestSeenHeadSupplementaryViewType(rawValue: index)?.string == elementKind) {
-                foundIndex = index
-            }
-        }
-        
-        if foundIndex == NSNotFound {
-            assertionFailure()
-        }
-        
+        let foundIndex = TestSeenHeadIndex(from: elementKind)
         let user: TestUser = (message?.seenBy[foundIndex])!
         
         seenHeadSupplementaryView.imageURL = user.url
@@ -85,5 +79,14 @@ extension TestMessageSectionController: ListSupplementaryViewSource {
     
     func sizeForSupplementaryView(ofKind elementKind: String, at index: Int) -> CGSize {
         return CGSize(width: CGFloat(TestSeenHeadUIMetrics.SeenHeadWidth), height: CGFloat(TestSeenHeadUIMetrics.SeenHeadWidth))
+    }
+}
+
+extension TestMessageSectionController: TestSeenHeadReusableViewDelegate {
+    func seenHeadResuaableViewDidTap(_ seenHeadReusableView: TestSeenHeadReusableView) {
+        let elementKind = seenHeadReusableView.elementKind
+        let foundIndex = TestSeenHeadIndex(from: elementKind)
+        let user = self.message?.seenBy[foundIndex]
+        delegate?.sectionController(self, didTapSeenHead: user!)
     }
 }

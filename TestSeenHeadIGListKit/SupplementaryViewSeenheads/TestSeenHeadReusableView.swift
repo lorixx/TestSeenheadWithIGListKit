@@ -10,14 +10,28 @@ import Foundation
 import UIKit
 import AlamofireImage
 
+protocol TestSeenHeadReusableViewDelegate {
+    func seenHeadResuaableViewDidTap(_ seenHeadReusableView: TestSeenHeadReusableView)
+}
+
 // A resuable view that will be used as a supplementary view for seenhead.
 class TestSeenHeadReusableView: UICollectionReusableView {
     private let imageView: UIImageView = UIImageView.init(frame: .zero)
+    
+    var delegate: TestSeenHeadReusableViewDelegate?
+    
+    var elementKind: String = ""
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+    }
     
     override init(frame: CGRect) {
         super.init(frame: frame)
         
         self.addSubview(imageView)
+        
+        self.addGestureRecognizer(UITapGestureRecognizer.init(target: self, action: #selector(didTap)))
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -39,5 +53,13 @@ class TestSeenHeadReusableView: UICollectionReusableView {
             
             imageView.af_setImage(withURL: imageURL!, placeholderImage: nil, filter: filter)
         }
+    }
+    
+    override func apply(_ layoutAttributes: UICollectionViewLayoutAttributes) {
+        super.apply(layoutAttributes)
+    }
+    
+    @objc func didTap(){
+        delegate?.seenHeadResuaableViewDidTap(self)
     }
 }

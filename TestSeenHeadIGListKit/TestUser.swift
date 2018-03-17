@@ -26,7 +26,7 @@ class TestUser: NSObject, ListDiffable {
     // MARK: ListDiffable
     
     func diffIdentifier() -> NSObjectProtocol {
-        return uuid as NSObjectProtocol
+        return name as NSObjectProtocol
     }
     
     func isEqual(toDiffableObject object: ListDiffable?) -> Bool {
