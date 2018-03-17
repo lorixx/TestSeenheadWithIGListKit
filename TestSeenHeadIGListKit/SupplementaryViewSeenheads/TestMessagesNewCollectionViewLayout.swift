@@ -36,7 +36,7 @@ protocol TestMessagesNewCollectionViewLayoutDataSource  {
     func collectionView(_ collectionView: UICollectionView, testMessageCollectionViewLayout collectionViewLayout:TestMessagesNewCollectionViewLayout, numberOfSeenHeads indexPath: IndexPath) -> Int
 
     // Ask the data source for the uid of the seenHead
-    func collectionView(_ collectionView: UICollectionView, testMessageCollectionViewLayout collectionViewLayout:TestMessagesNewCollectionViewLayout, uidOfSeenHeadAt indexPath: IndexPath, supplementaryViewKind: String) -> String
+    func collectionView(_ collectionView: UICollectionView, testMessageCollectionViewLayout collectionViewLayout:TestMessagesNewCollectionViewLayout, uidOfSeenHeadAt indexPath: IndexPath) -> String
 }
 
 class TestMessagesNewCollectionViewLayout: UICollectionViewLayout {
@@ -51,6 +51,18 @@ class TestMessagesNewCollectionViewLayout: UICollectionViewLayout {
     private var allLayoutAttributes: [ UICollectionViewLayoutAttributes ] = []
     
     private var totalHeight: CGFloat = 0.0
+    
+    private var correctedSeenHeadIndex = [ Dictionary<String, Int> ]()
+    
+    public func seenHeadIndexFrom(elementKind: String, section: Int) -> Int? {
+        if let elementKindToSeenheadIndex: Dictionary<String, Int> = correctedSeenHeadIndex[section] {
+            if let seenHeadIndex = elementKindToSeenheadIndex[elementKind] {
+                return seenHeadIndex
+            }
+        }
+        
+        return nil
+    }
     
     var dataSource: TestMessagesNewCollectionViewLayoutDataSource?
     
@@ -68,6 +80,7 @@ class TestMessagesNewCollectionViewLayout: UICollectionViewLayout {
         totalHeight = 0.0
         indexPathToSupplementaryViewLayoutAttributes.removeAll()
         indexPathToLayoutAttributes.removeAll()
+        correctedSeenHeadIndex.removeAll()
         
         // Set previous to the current one
         previousSeenHeadIdToAttributes = currentSeenHeadIdToAttributes
@@ -87,6 +100,7 @@ class TestMessagesNewCollectionViewLayout: UICollectionViewLayout {
 
         for section in 0..<numberOfSections {
             var kindToSupplementaryViewAttributes = [String : UICollectionViewLayoutAttributes]()
+            var kindToSeenheadIndex = [String : Int]()
             let currentIndexPath = IndexPath.init(item: 0, section: section)
             let size = layoutDataSource.collectionView(self.collectionView!, testMessageCollectionViewLayout: self, sizeForItemAt: currentIndexPath)
             let cellAttributes = UICollectionViewLayoutAttributes.init(forCellWith: currentIndexPath)
@@ -97,7 +111,14 @@ class TestMessagesNewCollectionViewLayout: UICollectionViewLayout {
             
             let numberOfSeenHeads = layoutDataSource.collectionView(self.collectionView!, testMessageCollectionViewLayout: self, numberOfSeenHeads: currentIndexPath)
             for seenHeadIndex in 0..<numberOfSeenHeads {
-                let seenHeadSupplementaryViewKind = TestSeenHeadSupplementaryViewType(rawValue: seenHeadIndex)!.string
+                var seenHeadSupplementaryViewKind = TestSeenHeadSupplementaryViewType(rawValue: seenHeadIndex)!.string
+                let uid: String = (dataSource?.collectionView(self.collectionView!, testMessageCollectionViewLayout: self, uidOfSeenHeadAt: IndexPath.init(item: seenHeadIndex, section: section)))!
+                if let oldAttributes = previousSeenHeadIdToAttributes[uid] {
+                    if (oldAttributes.indexPath) == currentIndexPath {
+                        // Reuse the previous supplementary kind, only if at the same indexPath location
+                        seenHeadSupplementaryViewKind = oldAttributes.representedElementKind!
+                    }
+                }
                 let seenHeadSupplementaryViewAttributes = UICollectionViewLayoutAttributes.init(forSupplementaryViewOfKind:seenHeadSupplementaryViewKind, with: currentIndexPath)
                 seenHeadSupplementaryViewAttributes.frame =
                     CGRect.init(x: collectionView!.bounds.size.width - CGFloat(seenHeadIndex+1)*CGFloat(TestSeenHeadUIMetrics.SeenHeadWidth + 5.0),
@@ -107,10 +128,11 @@ class TestMessagesNewCollectionViewLayout: UICollectionViewLayout {
                 allLayoutAttributes.append(seenHeadSupplementaryViewAttributes)
                 maxHeight = seenHeadSupplementaryViewAttributes.frame.maxY
                 kindToSupplementaryViewAttributes[seenHeadSupplementaryViewKind] = seenHeadSupplementaryViewAttributes
-                
-                let uid = dataSource?.collectionView(self.collectionView!, testMessageCollectionViewLayout: self, uidOfSeenHeadAt: IndexPath.init(item: seenHeadIndex, section: section), supplementaryViewKind: seenHeadSupplementaryViewKind)
-                currentSeenHeadIdToAttributes[uid!] = seenHeadSupplementaryViewAttributes
+                currentSeenHeadIdToAttributes[uid] = seenHeadSupplementaryViewAttributes
+                kindToSeenheadIndex[seenHeadSupplementaryViewKind] = seenHeadIndex
             }
+            
+            correctedSeenHeadIndex.append(kindToSeenheadIndex)
             indexPathToSupplementaryViewLayoutAttributes[currentIndexPath] = kindToSupplementaryViewAttributes
         }
         
@@ -157,9 +179,24 @@ class TestMessagesNewCollectionViewLayout: UICollectionViewLayout {
     }
     
     override func initialLayoutAttributesForAppearingSupplementaryElement(ofKind elementKind: String, at elementIndexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
-        let uid = dataSource?.collectionView(collectionView!, testMessageCollectionViewLayout: self, uidOfSeenHeadAt: elementIndexPath, supplementaryViewKind: elementKind)
-        if uid == "" {
-            return super.initialLayoutAttributesForAppearingSupplementaryElement(ofKind: elementKind, at: elementIndexPath)
+//        if let seenHeadIndex = seenHeadIndexFrom(elementKind: elementKind, section: elementIndexPath.section) {
+//            let uid = dataSource?.collectionView(collectionView!, testMessageCollectionViewLayout: self, uidOfSeenHeadAt: IndexPath.init(item: seenHeadIndex, section: elementIndexPath.section))
+//            if uid == "" {
+//                return super.initialLayoutAttributesForAppearingSupplementaryElement(ofKind: elementKind, at: elementIndexPath)
+//            }
+//        } else {
+//            // Weird
+//            return super.initialLayoutAttributesForAppearingSupplementaryElement(ofKind: elementKind, at: elementIndexPath)
+        //        }
+        //
+        if let seenHeadIndex = self.seenHeadIndexFrom(elementKind: elementKind, section: elementIndexPath.section) {
+            let uid = dataSource?.collectionView(collectionView!, testMessageCollectionViewLayout: self, uidOfSeenHeadAt: IndexPath.init(item: seenHeadIndex, section: elementIndexPath.section))
+            if uid == "" {
+                return super.initialLayoutAttributesForAppearingSupplementaryElement(ofKind: elementKind, at: elementIndexPath)
+            } else {
+                // Use the previous attributes to this ID.
+                return previousSeenHeadIdToAttributes[uid!]
+            }
         }
         
         let attributes = super.initialLayoutAttributesForAppearingSupplementaryElement(ofKind: elementKind, at: elementIndexPath)
