@@ -71,13 +71,33 @@ extension TestNewMainViewController: TestMessageSectionControllerDelegate {
         adapter.performUpdates(animated: true, completion: nil)
     }
     
-    func sectionController(_ sectionController: TestMessageSectionController, didTapSeenHead user: TestUser) {
+    func sectionController(_ sectionController: TestMessageSectionController, didTapSeenHead user: TestUser, elementKind kind: String) {
         let sectionIndex = messages.index(of: adapter.object(for: sectionController) as! TestMessage)!
+        let oldMessages = TestMessagesDeepCopy(self.messages)
+        
+        // Update Data Model
         let testMessage = messages[sectionIndex]
         let index = testMessage.seenBy.index(of: user)
         testMessage.seenBy.remove(at: index!)
         messages.last!.seenBy.append(user)
         
+        var deletes = [ String : IndexPath ]()
+        var inserts = [ String : IndexPath ]()
+        if sectionIndex == messages.count - 1 {
+            // If it's the last section, then we update everything after `index`.
+            for currentIndex in index!..<testMessage.seenBy.count {
+                let kind = (TestSeenHeadSupplementaryViewType(rawValue:(currentIndex))?.string)!
+                inserts[kind] = IndexPath.init(item: 0, section: sectionIndex)
+                deletes[kind] = IndexPath.init(item: 0, section: sectionIndex)
+            }
+        } else {
+            let insertKind = TestSeenHeadSupplementaryViewType(rawValue:(messages.last!.seenBy.count - 1))?.string
+            deletes = [ kind : IndexPath.init(item: 0, section: sectionIndex) ]
+            inserts = [ insertKind! : IndexPath.init(item: 0, section: messages.count - 1) ]
+        }
+        
+        let collectionViewLayout = collectionView.collectionViewLayout as! TestMessagesNewCollectionViewLayout
+        collectionViewLayout.prepareLayoutWith(deletes: deletes, inserts: inserts, oldMessages: oldMessages, newMessages: messages)
         adapter.performUpdates(animated: true, completion: nil)
     }
 }
@@ -109,10 +129,4 @@ extension TestNewMainViewController: TestMessagesNewCollectionViewLayoutDataSour
         return testMessage.seenBy[seenHeadIndex].name
     }
 }
-
-
-
-
-
-
 

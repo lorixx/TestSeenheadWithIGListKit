@@ -22,6 +22,10 @@ class TestSeenHeadReusableView: UICollectionReusableView {
     
     var elementKind: String = ""
     
+    var indexPath: IndexPath?
+    
+    private var layoutAttributes: UICollectionViewLayoutAttributes?
+    
     override func prepareForReuse() {
         super.prepareForReuse()
     }
@@ -43,6 +47,10 @@ class TestSeenHeadReusableView: UICollectionReusableView {
         imageView.frame = self.bounds
     }
     
+    override var description: String {
+        return super.description + " layoutAttributes: \(String(describing: self.layoutAttributes))"
+    }
+    
     public var imageURL: URL? {
         didSet {
             let seenHeadWidth = CGFloat(TestSeenHeadUIMetrics.SeenHeadWidth)
@@ -57,6 +65,7 @@ class TestSeenHeadReusableView: UICollectionReusableView {
     
     override func apply(_ layoutAttributes: UICollectionViewLayoutAttributes) {
         super.apply(layoutAttributes)
+        self.layoutAttributes = layoutAttributes
     }
     
     @objc func didTap(){

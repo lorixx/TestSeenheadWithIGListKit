@@ -12,7 +12,7 @@ import IGListKit
 protocol TestMessageSectionControllerDelegate {
     func didTapSection(messageSectionController: TestMessageSectionController) -> Void
     
-    func sectionController(_ sectionController: TestMessageSectionController, didTapSeenHead user: TestUser) -> Void
+    func sectionController(_ sectionController: TestMessageSectionController, didTapSeenHead user: TestUser, elementKind kind: String) -> Void
 }
 
 final class TestMessageSectionController: ListSectionController {
@@ -68,6 +68,7 @@ extension TestMessageSectionController: ListSupplementaryViewSource {
     func viewForSupplementaryElement(ofKind elementKind: String, at index: Int) -> UICollectionReusableView {
         let seenHeadSupplementaryView = (self.collectionContext?.dequeueReusableSupplementaryView(ofKind: elementKind, for: self, class: TestSeenHeadReusableView.self, at: index))! as! TestSeenHeadReusableView
         seenHeadSupplementaryView.elementKind = elementKind
+        seenHeadSupplementaryView.indexPath = IndexPath.init(item: index, section: self.section)
         seenHeadSupplementaryView.delegate = self
         
         let index = TestSeenHeadIndex(from: elementKind)
@@ -86,6 +87,6 @@ extension TestMessageSectionController: TestSeenHeadReusableViewDelegate {
         let elementKind = seenHeadReusableView.elementKind
         let index = TestSeenHeadIndex(from: elementKind)
         let user = self.message?.seenBy[index]
-        delegate?.sectionController(self, didTapSeenHead: user!)
+        delegate?.sectionController(self, didTapSeenHead: user!, elementKind: elementKind)
     }
 }

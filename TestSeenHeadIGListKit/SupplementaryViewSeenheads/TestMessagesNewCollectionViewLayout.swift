@@ -9,7 +9,6 @@
 import Foundation
 import UIKit
 
-
 enum TestSeenHeadSupplementaryViewType: Int {
     case seenHead0
     case seenHead1
@@ -41,6 +40,21 @@ protocol TestMessagesNewCollectionViewLayoutDataSource  {
 
 class TestMessagesNewCollectionViewLayout: UICollectionViewLayout {
     
+    private var deletes = [String : IndexPath]()
+    
+    private var inserts = [String : IndexPath]()
+    
+    private var oldMessages = [TestMessage]()
+    
+    private var newMessages = [TestMessage]()
+    
+    public func prepareLayoutWith(deletes: [String : IndexPath], inserts: [String : IndexPath], oldMessages: [TestMessage], newMessages: [TestMessage]) -> Void {
+        self.deletes = deletes
+        self.inserts = inserts
+        self.oldMessages = oldMessages
+        self.newMessages = newMessages
+    }
+    
     // indexPath -> cell layout attributes
     private var indexPathToLayoutAttributes: [ IndexPath : UICollectionViewLayoutAttributes ] = [ : ]
 
@@ -54,6 +68,10 @@ class TestMessagesNewCollectionViewLayout: UICollectionViewLayout {
     
     var dataSource: TestMessagesNewCollectionViewLayoutDataSource?
     
+    private var previousUidToLayoutAttributes = [String : UICollectionViewLayoutAttributes]()
+    
+    private var currentUidToLayoutAttributes = [String : UICollectionViewLayoutAttributes]()
+    
     override func prepare() {
         super.prepare()
         
@@ -61,6 +79,9 @@ class TestMessagesNewCollectionViewLayout: UICollectionViewLayout {
         totalHeight = 0.0
         indexPathToSupplementaryViewLayoutAttributes.removeAll()
         indexPathToLayoutAttributes.removeAll()
+        
+        previousUidToLayoutAttributes = currentUidToLayoutAttributes
+        currentUidToLayoutAttributes.removeAll()
         
         guard let collectionViewDataSource = self.collectionView?.dataSource else {
             print("CollectionView data source is not set")
@@ -96,6 +117,14 @@ class TestMessagesNewCollectionViewLayout: UICollectionViewLayout {
                 allLayoutAttributes.append(seenHeadSupplementaryViewAttributes)
                 maxHeight = seenHeadSupplementaryViewAttributes.frame.maxY
                 kindToSupplementaryViewAttributes[seenHeadSupplementaryViewKind] = seenHeadSupplementaryViewAttributes
+                
+                if (newMessages.count > 0) {
+                    let userId = newMessages[section].seenBy[seenHeadIndex].name
+                    currentUidToLayoutAttributes[userId] = seenHeadSupplementaryViewAttributes
+                } else {
+                    let userId = dataSource?.collectionView(collectionView!, testMessageCollectionViewLayout: self, uidOfSeenHeadAt: IndexPath.init(item: seenHeadIndex, section: section))
+                    currentUidToLayoutAttributes[userId!] = seenHeadSupplementaryViewAttributes
+                }
             }
             
             indexPathToSupplementaryViewLayoutAttributes[currentIndexPath] = kindToSupplementaryViewAttributes
@@ -110,6 +139,15 @@ class TestMessagesNewCollectionViewLayout: UICollectionViewLayout {
         } else {
             return CGSize.zero
         }
+    }
+    
+    override func finalizeCollectionViewUpdates() {
+        super.finalizeCollectionViewUpdates()
+        
+        newMessages = []
+        oldMessages = []
+        deletes = [:]
+        inserts = [:]
     }
     
     override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
@@ -144,22 +182,53 @@ class TestMessagesNewCollectionViewLayout: UICollectionViewLayout {
     }
     
     override func initialLayoutAttributesForAppearingSupplementaryElement(ofKind elementKind: String, at elementIndexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
-        let attributes = super.initialLayoutAttributesForAppearingSupplementaryElement(ofKind: elementKind, at: elementIndexPath)
-        return attributes
+        let seenHeadIndex = TestSeenHeadIndex(from: elementKind)
+        let sectionIndex = elementIndexPath.section
+        
+        if sectionIndex >= newMessages.count || seenHeadIndex >= newMessages[sectionIndex].seenBy.count {
+            return super.initialLayoutAttributesForAppearingSupplementaryElement(ofKind: elementKind, at: elementIndexPath)
+        }
+        
+        let uid = newMessages[sectionIndex].seenBy[seenHeadIndex].name
+        if let oldLayoutAttributes = previousUidToLayoutAttributes[uid] {
+            return oldLayoutAttributes
+        } else {
+            let attributes = super.initialLayoutAttributesForAppearingSupplementaryElement(ofKind: elementKind, at: elementIndexPath)
+            return attributes
+        }
     }
     
     override func finalLayoutAttributesForDisappearingSupplementaryElement(ofKind elementKind: String, at elementIndexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
-        let attributes = super.finalLayoutAttributesForDisappearingSupplementaryElement(ofKind: elementKind, at: elementIndexPath)
-        return attributes
+        
+        let seenHeadIndex = TestSeenHeadIndex(from: elementKind)
+        let sectionIndex = elementIndexPath.section
+        
+        if sectionIndex >= oldMessages.count || seenHeadIndex >= oldMessages[sectionIndex].seenBy.count {
+            return super.finalLayoutAttributesForDisappearingSupplementaryElement(ofKind: elementKind, at: elementIndexPath)
+        }
+
+        let uid = oldMessages[sectionIndex].seenBy[seenHeadIndex].name
+        if let newLayoutAttributes = currentUidToLayoutAttributes[uid] {
+            return newLayoutAttributes
+        } else {
+            let attributes = super.finalLayoutAttributesForDisappearingSupplementaryElement(ofKind: elementKind, at: elementIndexPath)
+            return attributes
+        }
     }
     
     override func indexPathsToInsertForSupplementaryView(ofKind elementKind: String) -> [IndexPath] {
-        let result = super.indexPathsToInsertForSupplementaryView(ofKind: elementKind)
+        var result = [IndexPath]()
+        if let insert = inserts[elementKind] {
+            result.append(insert)
+        }
         return result
     }
     
     override func indexPathsToDeleteForSupplementaryView(ofKind elementKind: String) -> [IndexPath] {
-        let result = super.indexPathsToDeleteForSupplementaryView(ofKind: elementKind)
+        var result = [IndexPath]()
+        if let delete = deletes[elementKind] {
+            result.append(delete)
+        }
         return result
     }
 }
