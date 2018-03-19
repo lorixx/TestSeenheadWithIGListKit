@@ -70,16 +70,10 @@ extension TestMessageSectionController: ListSupplementaryViewSource {
         seenHeadSupplementaryView.elementKind = elementKind
         seenHeadSupplementaryView.delegate = self
         
-        if let vc = viewController as? TestNewMainViewController {
-            if let index = vc.collectionViewLayout().seenHeadIndexFrom(elementKind: elementKind, section: self.section) {
-                let user = (self.message?.seenBy[index])!
-                seenHeadSupplementaryView.imageURL = user.url
-                return seenHeadSupplementaryView
-            }
-        }
-        
-        assertionFailure()
-        return (self.collectionContext?.dequeueReusableSupplementaryView(ofKind: elementKind, for: self, class: TestSeenHeadReusableView.self, at: index))! as! TestSeenHeadReusableView
+        let index = TestSeenHeadIndex(from: elementKind)
+        let user = (self.message?.seenBy[index])!
+        seenHeadSupplementaryView.imageURL = user.url
+        return seenHeadSupplementaryView
     }
     
     func sizeForSupplementaryView(ofKind elementKind: String, at index: Int) -> CGSize {
@@ -90,11 +84,8 @@ extension TestMessageSectionController: ListSupplementaryViewSource {
 extension TestMessageSectionController: TestSeenHeadReusableViewDelegate {
     func seenHeadResuaableViewDidTap(_ seenHeadReusableView: TestSeenHeadReusableView) {
         let elementKind = seenHeadReusableView.elementKind
-        if let vc = viewController as? TestNewMainViewController {
-            if let index = vc.collectionViewLayout().seenHeadIndexFrom(elementKind: elementKind, section: self.section) {
-                let user = self.message?.seenBy[index]
-                delegate?.sectionController(self, didTapSeenHead: user!)
-            }
-        }
+        let index = TestSeenHeadIndex(from: elementKind)
+        let user = self.message?.seenBy[index]
+        delegate?.sectionController(self, didTapSeenHead: user!)
     }
 }
