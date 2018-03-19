@@ -95,7 +95,6 @@ class TestMessageCollectionViewLayout: UICollectionViewLayout {
     
     override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
         var result: [UICollectionViewLayoutAttributes] = []
-        
         for currentLayoutAttributes in layoutAttributes {
             if (rect.intersects(currentLayoutAttributes.frame)) {
                 result.append(currentLayoutAttributes)

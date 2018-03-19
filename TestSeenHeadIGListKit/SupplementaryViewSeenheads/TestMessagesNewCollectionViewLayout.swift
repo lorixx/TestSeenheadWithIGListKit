@@ -48,13 +48,6 @@ class TestMessagesNewCollectionViewLayout: UICollectionViewLayout {
     
     private var newMessages = [TestMessage]()
     
-    public func prepareLayoutWith(deletes: [String : IndexPath], inserts: [String : IndexPath], oldMessages: [TestMessage], newMessages: [TestMessage]) -> Void {
-        self.deletes = deletes
-        self.inserts = inserts
-        self.oldMessages = oldMessages
-        self.newMessages = newMessages
-    }
-    
     // indexPath -> cell layout attributes
     private var indexPathToLayoutAttributes: [ IndexPath : UICollectionViewLayoutAttributes ] = [ : ]
 
@@ -66,12 +59,19 @@ class TestMessagesNewCollectionViewLayout: UICollectionViewLayout {
     
     private var totalHeight: CGFloat = 0.0
     
-    var dataSource: TestMessagesNewCollectionViewLayoutDataSource?
-    
     private var previousUidToLayoutAttributes = [String : UICollectionViewLayoutAttributes]()
     
     private var currentUidToLayoutAttributes = [String : UICollectionViewLayoutAttributes]()
     
+    public var dataSource: TestMessagesNewCollectionViewLayoutDataSource?
+
+    public func prepareLayoutWith(deletes: [String : IndexPath], inserts: [String : IndexPath], oldMessages: [TestMessage], newMessages: [TestMessage]) -> Void {
+        self.deletes = deletes
+        self.inserts = inserts
+        self.oldMessages = oldMessages
+        self.newMessages = newMessages
+    }
+
     override func prepare() {
         super.prepare()
         
@@ -118,13 +118,8 @@ class TestMessagesNewCollectionViewLayout: UICollectionViewLayout {
                 maxHeight = seenHeadSupplementaryViewAttributes.frame.maxY
                 kindToSupplementaryViewAttributes[seenHeadSupplementaryViewKind] = seenHeadSupplementaryViewAttributes
                 
-                if (newMessages.count > 0) {
-                    let userId = newMessages[section].seenBy[seenHeadIndex].name
-                    currentUidToLayoutAttributes[userId] = seenHeadSupplementaryViewAttributes
-                } else {
-                    let userId = dataSource?.collectionView(collectionView!, testMessageCollectionViewLayout: self, uidOfSeenHeadAt: IndexPath.init(item: seenHeadIndex, section: section))
-                    currentUidToLayoutAttributes[userId!] = seenHeadSupplementaryViewAttributes
-                }
+                let userId = dataSource?.collectionView(collectionView!, testMessageCollectionViewLayout: self, uidOfSeenHeadAt: IndexPath.init(item: seenHeadIndex, section: section))
+                currentUidToLayoutAttributes[userId!] = seenHeadSupplementaryViewAttributes
             }
             
             indexPathToSupplementaryViewLayoutAttributes[currentIndexPath] = kindToSupplementaryViewAttributes
@@ -193,13 +188,13 @@ class TestMessagesNewCollectionViewLayout: UICollectionViewLayout {
         if let oldLayoutAttributes = previousUidToLayoutAttributes[uid] {
             return oldLayoutAttributes
         } else {
+            assertionFailure()
             let attributes = super.initialLayoutAttributesForAppearingSupplementaryElement(ofKind: elementKind, at: elementIndexPath)
             return attributes
         }
     }
     
     override func finalLayoutAttributesForDisappearingSupplementaryElement(ofKind elementKind: String, at elementIndexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
-        
         let seenHeadIndex = TestSeenHeadIndex(from: elementKind)
         let sectionIndex = elementIndexPath.section
         
@@ -211,6 +206,7 @@ class TestMessagesNewCollectionViewLayout: UICollectionViewLayout {
         if let newLayoutAttributes = currentUidToLayoutAttributes[uid] {
             return newLayoutAttributes
         } else {
+            assertionFailure()
             let attributes = super.finalLayoutAttributesForDisappearingSupplementaryElement(ofKind: elementKind, at: elementIndexPath)
             return attributes
         }
