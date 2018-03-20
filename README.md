@@ -7,3 +7,10 @@ This github project is to mimic the similar behavior for what the messenger one 
 
 ![](https://cdn-images-1.medium.com/max/1600/1*54PHkyOt_cPgZth4ALMyEw.gif)
 
+We discussed 3 approaches:
+1) Using Vanilla UICollectionView 
+2) Using IGListKit + custom UICollectionViewLayout
+3) Using IGListKit with SupplementaryView
+
+Each of them have very inetersting characteristics, I also made an Medium article about it, enjoy!
+
