@@ -12,5 +12,5 @@ We discussed 3 approaches:
 2) Using IGListKit + custom UICollectionViewLayout
 3) Using IGListKit with SupplementaryView
 
-Each of them have very inetersting characteristics, I also made an Medium article about it, enjoy!
+Each of them have very inetersting characteristics, I also made an [Medium article](https://medium.com/@zhisheng_huang/messenger-seen-heads-animation-on-ios-1b06b7e610df) about it, enjoy!
 
