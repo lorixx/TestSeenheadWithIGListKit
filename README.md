@@ -5,4 +5,5 @@ Facebook Messenger has a special seen state animation when your message recipien
 This github project is to mimic the similar behavior for what the messenger one uses.
 
 
-https://cdn-images-1.medium.com/max/1600/1*54PHkyOt_cPgZth4ALMyEw.gif
+![](https://cdn-images-1.medium.com/max/1600/1*54PHkyOt_cPgZth4ALMyEw.gif)
+
